@@ -111,6 +111,17 @@ private:
         monoms.insert_after(prev, m);
     }
 
+    static void append_to_result(Polynomial& result, List<Monom>::Iterator& tail, bool& has_tail, const Monom& m) {
+        if (m.is_zero()) return;
+        if (!has_tail) {
+            result.monoms.push_front(m);
+            tail = result.monoms.begin();
+            has_tail = true;
+        } else {
+            tail = result.monoms.insert_after(tail, m);
+        }
+    }
+
 public:
     Polynomial() {}
     void add_monom(double coeff, int x_pow, int y_pow, int z_pow) {
@@ -121,29 +132,30 @@ public:
         auto it1 = monoms.begin();
         auto it2 = other.monoms.begin();
 
-        // Слияние двух отсортированных списков
+        List<Monom>::Iterator tail;
+        bool has_tail = false;
+
+        // Cлияние отсортированных списков
         while (it1 != monoms.end() && it2 != other.monoms.end()) {
             if (*it1 == *it2) {
-                Monom m(it1->coeff + it2->coeff, it1->i, it1->j, it1->k);
-                if (!m.is_zero()) {
-                    result.insert_sorted(m);
-                }
+                Monom s(it1->coeff + it2->coeff, it1->i, it1->j, it1->k);
+                append_to_result(result, tail, has_tail, s);
                 ++it1;
                 ++it2;
             } else if (*it1 < *it2) {
-                result.insert_sorted(*it1);
+                append_to_result(result, tail, has_tail, *it1);
                 ++it1;
             } else {
-                result.insert_sorted(*it2);
+                append_to_result(result, tail, has_tail, *it2);
                 ++it2;
             }
         }
         while (it1 != monoms.end()) {
-            result.insert_sorted(*it1);
+            append_to_result(result, tail, has_tail, *it1);
             ++it1;
         }
         while (it2 != other.monoms.end()) {
-            result.insert_sorted(*it2);
+            append_to_result(result, tail, has_tail, *it2);
             ++it2;
         }
 
